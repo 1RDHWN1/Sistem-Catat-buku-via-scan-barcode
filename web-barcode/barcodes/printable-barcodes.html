@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Barcode Buku Perpustakaan</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: #f4f6f8;
+        color: #202124;
+        font-family: Arial, sans-serif;
+      }
+      main {
+        width: min(980px, calc(100% - 28px));
+        margin: 0 auto;
+        padding: 24px 0;
+      }
+      h1 { margin: 0 0 16px; font-size: 28px; }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 14px;
+      }
+      .card {
+        border: 1px solid #d9dee8;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 14px;
+        page-break-inside: avoid;
+      }
+      img { width: 100%; height: auto; display: block; }
+      strong, span { display: block; text-align: center; }
+      strong { margin-top: 8px; font-size: 18px; }
+      span { color: #626975; }
+      @media print {
+        body { background: #ffffff; }
+        main { width: 100%; padding: 0; }
+        .card { box-shadow: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Barcode Buku Perpustakaan</h1>
+      <section class="grid">
+        <article class="card">
+      <img src="BK001.svg" alt="Barcode BK001" />
+      <div>
+        <strong>BK001</strong>
+        <span>Matematika</span>
+      </div>
+    </article><article class="card">
+      <img src="BK002.svg" alt="Barcode BK002" />
+      <div>
+        <strong>BK002</strong>
+        <span>IPA</span>
+      </div>
+    </article><article class="card">
+      <img src="BK003.svg" alt="Barcode BK003" />
+      <div>
+        <strong>BK003</strong>
+        <span>Bahasa Indonesia</span>
+      </div>
+    </article><article class="card">
+      <img src="BK004.svg" alt="Barcode BK004" />
+      <div>
+        <strong>BK004</strong>
+        <span>Informatika</span>
+      </div>
+    </article><article class="card">
+      <img src="BK005.svg" alt="Barcode BK005" />
+      <div>
+        <strong>BK005</strong>
+        <span>Sejarah Indonesia</span>
+      </div>
+    </article>
+      </section>
+    </main>
+  </body>
+</html>

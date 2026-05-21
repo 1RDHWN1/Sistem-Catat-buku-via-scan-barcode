@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Stack Scan Barcode Perpustakaan</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script
+      src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"
+      defer
+    ></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="toolbar" aria-label="Ringkasan sistem">
+        <div>
+          <p class="eyebrow">Struktur Data Stack</p>
+          <h1>Scan Barcode Buku</h1>
+        </div>
+        <div class="toolbar-actions">
+          <a class="print-link" href="barcodes/printable-barcodes.html">Lihat Barcode</a>
+          <div class="counter" aria-live="polite">
+            <span id="totalBooks">0</span>
+            <small>Total Scan</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="Aplikasi scan barcode">
+        <div class="scanner-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Scan Kamera</h2>
+              <p id="cameraStatus">Kamera belum aktif.</p>
+            </div>
+            <div class="actions">
+              <button id="startScanBtn" type="button">Mulai Scan</button>
+              <button id="stopScanBtn" type="button" class="secondary" disabled>
+                Stop
+              </button>
+            </div>
+          </div>
+          <div id="reader" class="reader" aria-label="Area kamera barcode"></div>
+        </div>
+
+        <div class="side-panel">
+          <section class="input-panel" aria-label="Input manual barcode">
+            <h2>Input Manual</h2>
+            <form id="manualForm">
+              <label for="manualCode">Kode barcode</label>
+              <div class="inline-form">
+                <input
+                  id="manualCode"
+                  name="manualCode"
+                  type="text"
+                  autocomplete="off"
+                  placeholder="Contoh: BK001"
+                  required
+                />
+                <button type="submit">Tambah</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="input-panel" aria-label="Database buku sederhana">
+            <h2>Database Buku</h2>
+            <form id="bookForm">
+              <label for="bookCode">Kode barcode</label>
+              <input
+                id="bookCode"
+                name="bookCode"
+                type="text"
+                autocomplete="off"
+                placeholder="Contoh: BK004"
+                required
+              />
+
+              <label for="bookTitle">Judul buku</label>
+              <input
+                id="bookTitle"
+                name="bookTitle"
+                type="text"
+                autocomplete="off"
+                placeholder="Contoh: Sejarah Indonesia"
+                required
+              />
+
+              <button type="submit">Simpan Data Buku</button>
+            </form>
+          </section>
+        </div>
+      </section>
+
+      <section class="data-area" aria-label="Data hasil scan">
+        <div class="stack-panel">
+          <div class="panel-head">
+            <div>
+              <h2>Stack Hasil Scan</h2>
+              <p>Data terakhir berada di paling atas.</p>
+            </div>
+            <button id="popBtn" type="button" class="danger">Hapus Terakhir</button>
+          </div>
+          <ol id="stackList" class="stack-list"></ol>
+          <p id="emptyState" class="empty-state">Belum ada buku yang discan.</p>
+        </div>
+
+        <div class="database-panel">
+          <h2>Daftar Kode Buku</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Kode</th>
+                <th>Judul</th>
+              </tr>
+            </thead>
+            <tbody id="bookTable"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
