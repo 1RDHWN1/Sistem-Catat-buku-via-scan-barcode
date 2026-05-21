@@ -11,6 +11,11 @@ let scanStack = [];
 let scanner = null;
 let isScanning = false;
 let lastScan = { code: "", time: 0 };
+let lastNotice = { message: "", time: 0 };
+let scanCooldownUntil = 0;
+let audioContext = null;
+let toastTimer = null;
+let lastToneTime = 0;
 
 const startScanBtn = document.querySelector("#startScanBtn");
 const stopScanBtn = document.querySelector("#stopScanBtn");
@@ -25,6 +30,7 @@ const stackList = document.querySelector("#stackList");
 const emptyState = document.querySelector("#emptyState");
 const totalBooks = document.querySelector("#totalBooks");
 const bookTable = document.querySelector("#bookTable");
+const toast = document.querySelector("#toast");
 
 function loadBookDatabase() {
   const stored = localStorage.getItem("bookDatabase");
@@ -43,31 +49,54 @@ function getBookTitle(code) {
   return bookDatabase[code] || "Kode belum terdaftar";
 }
 
+function hasBookInStack(code) {
+  return scanStack.some((item) => item.code === code);
+}
+
 function pushBook(code, method) {
   const normalizedCode = normalizeCode(code);
 
   if (!normalizedCode) {
-    return;
+    notify("Kode barcode tidak boleh kosong.", "warning");
+    playTone("warning");
+    return false;
+  }
+
+  if (!bookDatabase[normalizedCode]) {
+    notify(`Kode ${normalizedCode} belum terdaftar di database.`, "warning");
+    playTone("warning");
+    return false;
+  }
+
+  if (hasBookInStack(normalizedCode)) {
+    notify(`Kode ${normalizedCode} sudah ada di stack.`, "warning");
+    playTone("warning");
+    return false;
   }
 
   scanStack.push({
     code: normalizedCode,
-    title: getBookTitle(normalizedCode),
+    title: bookDatabase[normalizedCode],
     method,
     time: new Date(),
   });
 
   renderStack();
+  notify(`${bookDatabase[normalizedCode]} berhasil masuk ke stack.`, "success");
+  playTone("success");
+  return true;
 }
 
 function popBook() {
   if (scanStack.length === 0) {
-    alert("Stack masih kosong, tidak ada data yang bisa dihapus.");
+    notify("Stack masih kosong, tidak ada data yang bisa dihapus.", "warning");
+    playTone("warning");
     return;
   }
 
-  scanStack.pop();
+  const removedBook = scanStack.pop();
   renderStack();
+  notify(`${removedBook.title} dihapus dari stack.`, "warning");
 }
 
 function renderStack() {
@@ -124,10 +153,75 @@ function formatTime(date) {
   }).format(date);
 }
 
+function unlockAudio() {
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+
+  if (!AudioContext) {
+    return;
+  }
+
+  if (!audioContext) {
+    audioContext = new AudioContext();
+  }
+
+  if (audioContext.state === "suspended") {
+    audioContext.resume();
+  }
+}
+
+function playTone(type) {
+  const timestamp = Date.now();
+
+  if (!audioContext || timestamp - lastToneTime < 800) {
+    return;
+  }
+
+  lastToneTime = timestamp;
+
+  if (navigator.vibrate) {
+    navigator.vibrate(type === "success" ? 80 : [80, 60, 80]);
+  }
+
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  const now = audioContext.currentTime;
+
+  oscillator.type = "sine";
+  oscillator.frequency.value = type === "success" ? 880 : 220;
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.18, now + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+
+  oscillator.connect(gain);
+  gain.connect(audioContext.destination);
+  oscillator.start(now);
+  oscillator.stop(now + 0.18);
+}
+
+function notify(message, type = "success") {
+  const now = Date.now();
+
+  if (lastNotice.message === message && now - lastNotice.time < 1600) {
+    return;
+  }
+
+  lastNotice = { message, time: now };
+  toast.textContent = message;
+  toast.className = `toast ${type}`;
+  toast.hidden = false;
+
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => {
+    toast.hidden = true;
+  }, 2600);
+}
+
 async function startScanner() {
+  unlockAudio();
   if (!window.Html5Qrcode) {
     cameraStatus.textContent =
       "Library scanner belum terbaca. Cek koneksi internet atau pakai input manual.";
+    notify("Library scanner belum terbaca. Gunakan input manual.", "warning");
     return;
   }
 
@@ -152,6 +246,8 @@ async function startScanner() {
   } catch (error) {
     cameraStatus.textContent =
       "Kamera tidak bisa dibuka. Izinkan akses kamera atau gunakan input manual.";
+    notify("Kamera tidak bisa dibuka. Cek izin kamera browser.", "error");
+    playTone("warning");
   }
 }
 
@@ -173,17 +269,24 @@ function handleScanSuccess(decodedText) {
   const code = normalizeCode(decodedText);
   const now = Date.now();
 
-  if (lastScan.code === code && now - lastScan.time < 1800) {
+  if (now < scanCooldownUntil) {
     return;
   }
 
   lastScan = { code, time: now };
-  pushBook(code, "Scan kamera");
-  cameraStatus.textContent = `Barcode ${code} berhasil masuk ke stack.`;
+  const added = pushBook(code, "Scan kamera");
+
+  if (added) {
+    scanCooldownUntil = now + 1800;
+    cameraStatus.textContent = `Barcode ${code} berhasil masuk ke stack.`;
+  } else {
+    cameraStatus.textContent = `Barcode ${code} tidak dimasukkan ke stack.`;
+  }
 }
 
 manualForm.addEventListener("submit", (event) => {
   event.preventDefault();
+  unlockAudio();
   pushBook(manualCodeInput.value, "Input manual");
   manualCodeInput.value = "";
   manualCodeInput.focus();
@@ -191,6 +294,7 @@ manualForm.addEventListener("submit", (event) => {
 
 bookForm.addEventListener("submit", (event) => {
   event.preventDefault();
+  unlockAudio();
   const code = normalizeCode(bookCodeInput.value);
   const title = bookTitleInput.value.trim();
 
@@ -201,6 +305,8 @@ bookForm.addEventListener("submit", (event) => {
   bookDatabase[code] = title;
   saveBookDatabase();
   renderBookTable();
+  notify(`Data buku ${code} berhasil disimpan.`, "success");
+  playTone("success");
   bookForm.reset();
   bookCodeInput.focus();
 });
