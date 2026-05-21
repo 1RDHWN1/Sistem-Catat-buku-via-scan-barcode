@@ -327,6 +327,16 @@ h2 {
   background: var(--danger);
 }
 
+.barcode-preview {
+  width: 150px;
+  max-width: 100%;
+}
+
+.barcode-preview svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
 table {
   width: 100%;
   border-collapse: collapse;

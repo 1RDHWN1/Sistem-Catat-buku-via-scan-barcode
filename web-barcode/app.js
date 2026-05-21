@@ -1,10 +1,4 @@
-const defaultBooks = {
-  BK001: "Matematika",
-  BK002: "IPA",
-  BK003: "Bahasa Indonesia",
-  BK004: "Informatika",
-  BK005: "Sejarah Indonesia",
-};
+const defaultBooks = window.defaultBookDatabase || {};
 
 let bookDatabase = loadBookDatabase();
 let scanStack = [];
@@ -22,6 +16,7 @@ const stopScanBtn = document.querySelector("#stopScanBtn");
 const popBtn = document.querySelector("#popBtn");
 const manualForm = document.querySelector("#manualForm");
 const bookForm = document.querySelector("#bookForm");
+const generateCodeBtn = document.querySelector("#generateCodeBtn");
 const manualCodeInput = document.querySelector("#manualCode");
 const bookCodeInput = document.querySelector("#bookCode");
 const bookTitleInput = document.querySelector("#bookTitle");
@@ -49,6 +44,15 @@ function getBookTitle(code) {
   return bookDatabase[code] || "Kode belum terdaftar";
 }
 
+function getNextBookCode() {
+  const usedNumbers = Object.keys(bookDatabase)
+    .map((code) => code.match(/^BK(\d+)$/))
+    .filter(Boolean)
+    .map((match) => Number(match[1]));
+  const nextNumber = usedNumbers.length > 0 ? Math.max(...usedNumbers) + 1 : 1;
+  return `BK${String(nextNumber).padStart(3, "0")}`;
+}
+
 function hasBookInStack(code) {
   return scanStack.some((item) => item.code === code);
 }
@@ -58,6 +62,12 @@ function pushBook(code, method) {
 
   if (!normalizedCode) {
     notify("Kode barcode tidak boleh kosong.", "warning");
+    playTone("warning");
+    return false;
+  }
+
+  if (!window.canEncodeCode128(normalizedCode)) {
+    notify("Kode hanya boleh memakai huruf, angka, spasi, atau simbol ASCII.", "warning");
     playTone("warning");
     return false;
   }
@@ -137,10 +147,19 @@ function renderBookTable() {
       const row = document.createElement("tr");
       const codeCell = document.createElement("td");
       const titleCell = document.createElement("td");
+      const barcodeCell = document.createElement("td");
+      const barcodePreview = document.createElement("div");
 
       codeCell.textContent = code;
       titleCell.textContent = title;
-      row.append(codeCell, titleCell);
+      barcodePreview.className = "barcode-preview";
+      barcodePreview.innerHTML = window.renderCode128Svg(code, title, {
+        moduleWidth: 1,
+        barHeight: 38,
+        quietZone: 10,
+      });
+      barcodeCell.appendChild(barcodePreview);
+      row.append(codeCell, titleCell, barcodeCell);
       bookTable.appendChild(row);
     });
 }
@@ -302,13 +321,24 @@ bookForm.addEventListener("submit", (event) => {
     return;
   }
 
+  if (!window.canEncodeCode128(code)) {
+    notify("Kode barcode hanya boleh memakai karakter ASCII.", "warning");
+    playTone("warning");
+    return;
+  }
+
   bookDatabase[code] = title;
   saveBookDatabase();
   renderBookTable();
-  notify(`Data buku ${code} berhasil disimpan.`, "success");
+  notify(`Data buku ${code} berhasil disimpan dan barcode otomatis dibuat.`, "success");
   playTone("success");
   bookForm.reset();
   bookCodeInput.focus();
+});
+
+generateCodeBtn.addEventListener("click", () => {
+  bookCodeInput.value = getNextBookCode();
+  bookTitleInput.focus();
 });
 
 startScanBtn.addEventListener("click", startScanner);

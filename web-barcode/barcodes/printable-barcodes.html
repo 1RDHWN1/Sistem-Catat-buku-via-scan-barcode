@@ -4,6 +4,38 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Barcode Buku Perpustakaan</title>
+    <script src="../barcode.js" defer></script>
+    <script defer>
+      function loadBookDatabase() {
+        const stored = localStorage.getItem("bookDatabase");
+        return stored ? JSON.parse(stored) : { ...window.defaultBookDatabase };
+      }
+
+      function renderBarcodeCards() {
+        const grid = document.querySelector("#barcodeGrid");
+        const database = loadBookDatabase();
+        grid.innerHTML = "";
+
+        Object.entries(database)
+          .sort(([codeA], [codeB]) => codeA.localeCompare(codeB))
+          .forEach(([code, title]) => {
+            const card = document.createElement("article");
+            const label = document.createElement("div");
+            const strong = document.createElement("strong");
+            const span = document.createElement("span");
+
+            card.className = "card";
+            card.innerHTML = window.renderCode128Svg(code, title);
+            strong.textContent = code;
+            span.textContent = title;
+            label.append(strong, span);
+            card.appendChild(label);
+            grid.appendChild(card);
+          });
+      }
+
+      window.addEventListener("DOMContentLoaded", renderBarcodeCards);
+    </script>
     <style>
       * { box-sizing: border-box; }
       body {
@@ -17,7 +49,30 @@
         margin: 0 auto;
         padding: 24px 0;
       }
-      h1 { margin: 0 0 16px; font-size: 28px; }
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      h1 { margin: 0; font-size: 28px; }
+      button, a {
+        min-height: 42px;
+        border: 0;
+        border-radius: 6px;
+        background: #146c94;
+        color: #ffffff;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        font: inherit;
+        font-weight: 700;
+        padding: 10px 14px;
+        text-decoration: none;
+      }
+      a { background: #e6f3f1; color: #0f5f55; }
+      .actions { display: flex; gap: 8px; }
       .grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -30,53 +85,31 @@
         padding: 14px;
         page-break-inside: avoid;
       }
-      img { width: 100%; height: auto; display: block; }
+      svg { width: 100%; height: auto; display: block; }
       strong, span { display: block; text-align: center; }
       strong { margin-top: 8px; font-size: 18px; }
       span { color: #626975; }
+      @media (max-width: 640px) {
+        .topbar, .actions { align-items: stretch; flex-direction: column; }
+      }
       @media print {
         body { background: #ffffff; }
         main { width: 100%; padding: 0; }
+        .topbar { display: none; }
         .card { box-shadow: none; }
       }
     </style>
   </head>
   <body>
     <main>
-      <h1>Barcode Buku Perpustakaan</h1>
-      <section class="grid">
-        <article class="card">
-      <img src="BK001.svg" alt="Barcode BK001" />
-      <div>
-        <strong>BK001</strong>
-        <span>Matematika</span>
+      <div class="topbar">
+        <h1>Barcode Buku Perpustakaan</h1>
+        <div class="actions">
+          <a href="../index.html">Kembali</a>
+          <button type="button" onclick="window.print()">Cetak</button>
+        </div>
       </div>
-    </article><article class="card">
-      <img src="BK002.svg" alt="Barcode BK002" />
-      <div>
-        <strong>BK002</strong>
-        <span>IPA</span>
-      </div>
-    </article><article class="card">
-      <img src="BK003.svg" alt="Barcode BK003" />
-      <div>
-        <strong>BK003</strong>
-        <span>Bahasa Indonesia</span>
-      </div>
-    </article><article class="card">
-      <img src="BK004.svg" alt="Barcode BK004" />
-      <div>
-        <strong>BK004</strong>
-        <span>Informatika</span>
-      </div>
-    </article><article class="card">
-      <img src="BK005.svg" alt="Barcode BK005" />
-      <div>
-        <strong>BK005</strong>
-        <span>Sejarah Indonesia</span>
-      </div>
-    </article>
-      </section>
+      <section id="barcodeGrid" class="grid" aria-label="Daftar barcode buku"></section>
     </main>
   </body>
 </html>

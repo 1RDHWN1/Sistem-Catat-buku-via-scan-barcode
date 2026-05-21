@@ -9,6 +9,7 @@
       src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"
       defer
     ></script>
+    <script src="barcode.js" defer></script>
     <script src="app.js" defer></script>
   </head>
   <body>
@@ -67,14 +68,17 @@
             <h2>Database Buku</h2>
             <form id="bookForm">
               <label for="bookCode">Kode barcode</label>
-              <input
-                id="bookCode"
-                name="bookCode"
-                type="text"
-                autocomplete="off"
-                placeholder="Contoh: BK004"
-                required
-              />
+              <div class="inline-form">
+                <input
+                  id="bookCode"
+                  name="bookCode"
+                  type="text"
+                  autocomplete="off"
+                  placeholder="Contoh: BK006"
+                  required
+                />
+                <button id="generateCodeBtn" type="button" class="secondary">Buat Kode</button>
+              </div>
 
               <label for="bookTitle">Judul buku</label>
               <input
@@ -112,6 +116,7 @@
               <tr>
                 <th>Kode</th>
                 <th>Judul</th>
+                <th>Barcode</th>
               </tr>
             </thead>
             <tbody id="bookTable"></tbody>
